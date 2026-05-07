@@ -1,0 +1,81 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "sqlite" url = env("DATABASE_URL") }
+
+enum Difficulty { EASY MEDIUM HARD }
+enum AttemptMode { TRAIN EXAM }
+enum ReviewRating { AGAIN HARD GOOD EASY }
+
+model Question {
+  id Int @id @default(autoincrement())
+  statement String
+  optionA String
+  optionB String
+  optionC String
+  optionD String
+  optionE String
+  correctOption String
+  explanation String
+  subject String
+  theme String
+  subtheme String?
+  difficulty Difficulty
+  tags String
+  source String?
+  reviewed Boolean @default(false)
+  createdAt DateTime @default(now())
+  attempts QuestionAttempt[]
+  examQuestions ExamQuestion[]
+}
+model QuestionAttempt {
+  id Int @id @default(autoincrement())
+  questionId Int
+  question Question @relation(fields:[questionId], references:[id])
+  examId Int?
+  exam Exam? @relation(fields:[examId], references:[id])
+  selectedOption String
+  correct Boolean
+  mode AttemptMode
+  createdAt DateTime @default(now())
+}
+model Exam {
+  id Int @id @default(autoincrement())
+  title String
+  randomOrder Boolean @default(true)
+  createdAt DateTime @default(now())
+  examQuestions ExamQuestion[]
+  attempts QuestionAttempt[]
+}
+model ExamQuestion {
+  id Int @id @default(autoincrement())
+  examId Int
+  questionId Int
+  position Int
+  exam Exam @relation(fields:[examId], references:[id])
+  question Question @relation(fields:[questionId], references:[id])
+}
+model Flashcard {
+  id Int @id @default(autoincrement())
+  front String
+  back String
+  subject String
+  theme String
+  tags String
+  intervalDays Int @default(1)
+  easeFactor Float @default(2.5)
+  reviewCount Int @default(0)
+  lapseCount Int @default(0)
+  nextReview DateTime @default(now())
+  reviews FlashcardReview[]
+}
+model FlashcardReview {
+  id Int @id @default(autoincrement())
+  flashcardId Int
+  flashcard Flashcard @relation(fields:[flashcardId], references:[id])
+  rating ReviewRating
+  previousInterval Int
+  newInterval Int
+  previousEaseFactor Float
+  newEaseFactor Float
+  reviewedAt DateTime @default(now())
+  nextReview DateTime
+}
