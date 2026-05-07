@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
 import { parseFreeTextQuestions } from "@/lib/import-parser";
+import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 export async function POST(req: Request) {
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const hasErrors = parsed.some((p) => p.errors.length > 0);
 
   if (mode === "preview") return Response.json({ total: parsed.length, hasErrors, items: parsed });
-  if (hasErrors) return Response.json({ message: "Existem questões com erro", items: parsed }, { status: 400 });
+  if (hasErrors) return Response.json({ message: "Existem questoes com erro", items: parsed }, { status: 400 });
 
   await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await tx.question.createMany({

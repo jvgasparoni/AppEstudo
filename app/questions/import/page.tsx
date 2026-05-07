@@ -7,6 +7,11 @@ type PreviewItem = {
   errors: string[];
   parsed?: {
     statement: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    optionE: string;
     correctOption: string;
     subject: string;
     theme: string;
@@ -29,7 +34,7 @@ export default function ImportPage() {
     });
     const data = await res.json();
     setItems(data.items || []);
-    setMsg(data.total ? `${data.total} questão(ões) identificada(s).` : "Nenhuma questão identificada.");
+    setMsg(data.total ? `${data.total} questao(oes) identificada(s).` : "Nenhuma questao identificada.");
   }
 
   async function save() {
@@ -40,14 +45,14 @@ export default function ImportPage() {
     });
     const data = await res.json();
     if (!res.ok) return setMsg(data.message || "Erro ao importar");
-    setMsg(`Importação concluída: ${data.imported} questão(ões).`);
+    setMsg(`Importacao concluida: ${data.imported} questao(oes).`);
     setPayload("");
     setItems([]);
   }
 
   return (
     <div className="space-y-4">
-      <div className="card text-sm whitespace-pre-wrap">{`Formato esperado:
+      <div className="card whitespace-pre-wrap text-sm">{`Formato esperado:
 Enunciado:
 ...
 
@@ -58,24 +63,28 @@ D) ...
 E) ...
 
 Resposta correta: C
-Explicação:
+Explicacao:
 ...
 
-Matéria: ...
+Materia: ...
 Tema: ...
-Dificuldade: fácil|médio|difícil
+Dificuldade: facil|medio|dificil
 Tags: opcional`}</div>
 
       <textarea
         value={payload}
         onChange={(e) => setPayload(e.target.value)}
         className="input h-64"
-        placeholder="Cole várias questões em sequência..."
+        placeholder="Cole varias questoes em sequencia..."
       />
 
       <div className="flex gap-2">
-        <button className="btn-primary" type="button" onClick={preview}>Validar e gerar prévia</button>
-        <button className="btn border" type="button" onClick={save} disabled={!items.length || hasErrors}>Salvar válidas</button>
+        <button className="btn-primary" type="button" onClick={preview}>
+          Validar e gerar previa
+        </button>
+        <button className="btn border" type="button" onClick={save} disabled={!items.length || hasErrors}>
+          Salvar validas
+        </button>
       </div>
 
       {msg && <p className="text-sm">{msg}</p>}
@@ -84,15 +93,26 @@ Tags: opcional`}</div>
         <div className="space-y-2">
           {items.map((item) => (
             <div key={item.index} className="card">
-              <p className="font-semibold">Questão #{item.index}</p>
+              <p className="font-semibold">Questao #{item.index}</p>
               {item.errors.length > 0 ? (
-                <ul className="text-red-600 list-disc ml-6">
-                  {item.errors.map((e) => <li key={e}>{e}</li>)}
+                <ul className="ml-6 list-disc text-red-600">
+                  {item.errors.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
                 </ul>
               ) : (
                 <div className="text-sm">
                   <p>{item.parsed?.statement}</p>
-                  <p>Resposta: {item.parsed?.correctOption} | {item.parsed?.subject} / {item.parsed?.theme} / {item.parsed?.difficulty}</p>
+                  <ul className="mt-2 space-y-1">
+                    <li>A) {item.parsed?.optionA}</li>
+                    <li>B) {item.parsed?.optionB}</li>
+                    <li>C) {item.parsed?.optionC}</li>
+                    <li>D) {item.parsed?.optionD}</li>
+                    <li>E) {item.parsed?.optionE}</li>
+                  </ul>
+                  <p className="mt-2">
+                    Resposta: {item.parsed?.correctOption} | {item.parsed?.subject} / {item.parsed?.theme} / {item.parsed?.difficulty}
+                  </p>
                 </div>
               )}
             </div>

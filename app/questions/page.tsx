@@ -1,10 +1,30 @@
+import QuestionManager from "@/components/QuestionManager";
 import { prisma } from "@/lib/prisma";
 
-type QuestionItem = { id: number; statement: string; subject: string; theme: string; difficulty: string; tags: string };
-
 export default async function Questions({ searchParams }: { searchParams: { q?: string } }) {
-  const q = searchParams.q || "";
-  const data = (await prisma.question.findMany({ where: q ? { OR: [{ statement: { contains: q } }, { tags: { contains: q } }] } : undefined, take: 100 })) as QuestionItem[];
+  const q = (searchParams.q || "").trim();
+  const data = await prisma.question.findMany({
+    where: q
+      ? {
+          OR: [
+            { statement: { contains: q } },
+            { tags: { contains: q } },
+            { subject: { contains: q } },
+            { theme: { contains: q } },
+          ],
+        }
+      : undefined,
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: {
+      _count: {
+        select: {
+          attempts: true,
+          examQuestions: true,
+        },
+      },
+    },
+  });
 
-  return <div><form><input name='q' placeholder='buscar' defaultValue={q} className='input mb-3'/></form><div className='space-y-2'>{data.map((i: QuestionItem) => <div key={i.id} className='card'><p className='font-semibold'>{i.statement}</p><p>{i.subject} / {i.theme} / {i.difficulty}</p></div>)}</div></div>;
+  return <QuestionManager questions={data} query={q} />;
 }
