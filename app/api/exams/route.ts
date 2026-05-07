@@ -1,38 +1,33 @@
+import { buildCustomDomainPlan, buildExamBlueprintPlan } from "@/lib/exam-planner";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+
+type CreateExamBody =
+  | { mode: "examBlueprint"; amount: number }
+  | { mode: "custom"; domains: Array<{ theme: string; amount: number }> };
 
 export async function POST(req: Request) {
-  const f = await req.formData();
-  const amount = Number(f.get("amount") || 10);
-  const randomOrder = !!f.get("randomOrder");
-  const where: Record<string, unknown> = {};
+  const body = (await req.json().catch(() => null)) as CreateExamBody | null;
+  if (!body) return Response.json({ message: "Dados invalidos" }, { status: 400 });
 
-  ["subject", "theme"].forEach((k) => {
-    const v = f.get(k);
-    if (v) where[k] = String(v);
-  });
+  const questions = await prisma.question.findMany({ select: { id: true, theme: true, tags: true } });
+  const plan =
+    body.mode === "examBlueprint"
+      ? buildExamBlueprintPlan(questions, body.amount)
+      : body.mode === "custom"
+        ? buildCustomDomainPlan(questions, body.domains)
+        : { ok: false as const, message: "Modo de simulado invalido." };
 
-  const diff = f.get("difficulty");
-  if (diff) where.difficulty = String(diff);
-
-  const tags = f.get("tags");
-  if (tags) where.tags = { contains: String(tags) };
-
-  const qs = await prisma.question.findMany({
-    where,
-    take: amount,
-    orderBy: randomOrder ? { id: "desc" } : { id: "asc" },
-  });
+  if (!plan.ok) return Response.json({ message: plan.message }, { status: 400 });
 
   const exam = await prisma.exam.create({
     data: {
-      title: String(f.get("title") || "Simulado"),
-      randomOrder,
+      title: plan.title,
+      randomOrder: true,
       examQuestions: {
-        create: qs.map((q: { id: number }, i: number) => ({ questionId: q.id, position: i + 1 })),
+        create: plan.selectedIds.map((questionId, index) => ({ questionId, position: index + 1 })),
       },
     },
   });
 
-  redirect(`/exams/result?examId=${exam.id}`);
+  return Response.json({ ok: true, examId: exam.id });
 }

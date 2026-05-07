@@ -1,1 +1,33 @@
-export default function Exams(){return <form action='/api/exams' method='post' className='card grid gap-2 md:grid-cols-2'>{['title','subject','theme','tags'].map(f=><input className='input' key={f} name={f} placeholder={f}/>)}<input className='input' name='amount' placeholder='quantidade' defaultValue='10'/><select className='input' name='difficulty'><option value=''>Todas</option><option>EASY</option><option>MEDIUM</option><option>HARD</option></select><label><input type='checkbox' name='randomOrder' defaultChecked/> Aleatório</label><button className='btn-primary'>Criar simulado</button></form>}
+import ExamManager from "@/components/ExamManager";
+import { getQuestionDomain, sortDomains } from "@/lib/domains";
+import { prisma } from "@/lib/prisma";
+
+export default async function Exams() {
+  const questions = await prisma.question.findMany({
+    select: {
+      theme: true,
+      tags: true,
+    },
+  });
+
+  const counts = new Map<string, number>();
+  for (const question of questions) {
+    const domain = getQuestionDomain(question);
+    counts.set(domain, (counts.get(domain) || 0) + 1);
+  }
+
+  const domains = Array.from(counts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort(sortDomains);
+
+  return (
+    <div className="space-y-4">
+      <div className="card">
+        <p className="text-sm text-slate-500">Gerir Simulados</p>
+        <h2 className="text-xl font-semibold">Criar novo simulado</h2>
+        <p className="text-sm text-slate-600">Use a proporcao da prova Security+ ou monte um simulado por dominio.</p>
+      </div>
+      <ExamManager domains={domains} totalQuestions={questions.length} />
+    </div>
+  );
+}

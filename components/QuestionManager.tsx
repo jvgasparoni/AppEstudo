@@ -110,14 +110,19 @@ export default function QuestionManager({ questions, query }: { questions: Quest
                   <p className="font-semibold leading-snug">{item.statement}</p>
                 </div>
 
-                <button
-                  className="btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-60"
-                  type="button"
-                  disabled={deletingId === item.id || isPending}
-                  onClick={() => deleteQuestion(item)}
-                >
-                  {deletingId === item.id ? "Excluindo..." : "Excluir"}
-                </button>
+                <div className="flex gap-2">
+                  <a className="btn border bg-white" href={`/questions/${item.id}/edit`}>
+                    Editar
+                  </a>
+                  <button
+                    className="btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-60"
+                    type="button"
+                    disabled={deletingId === item.id || isPending}
+                    onClick={() => deleteQuestion(item)}
+                  >
+                    {deletingId === item.id ? "Excluindo..." : "Excluir"}
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-4 text-sm text-slate-600">

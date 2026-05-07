@@ -19,11 +19,14 @@ type PreviewItem = {
   };
 };
 
+const PREVIEW_LIMIT = 50;
+
 export default function ImportPage() {
   const [payload, setPayload] = useState("");
   const [items, setItems] = useState<PreviewItem[]>([]);
   const [msg, setMsg] = useState("");
   const hasErrors = items.some((i) => i.errors.length > 0);
+  const visibleItems = items.slice(0, PREVIEW_LIMIT);
 
   async function preview() {
     setMsg("Validando...");
@@ -48,6 +51,23 @@ export default function ImportPage() {
     setMsg(`Importacao concluida: ${data.imported} questao(oes).`);
     setPayload("");
     setItems([]);
+  }
+
+  async function deleteAllQuestions() {
+    const confirmation = window.prompt("Digite DELETE_ALL para apagar todas as questoes, tentativas e simulados vinculados.");
+    if (confirmation !== "DELETE_ALL") {
+      setMsg("Exclusao cancelada.");
+      return;
+    }
+
+    setMsg("Apagando questoes...");
+    const res = await fetch("/api/questions/import?confirm=DELETE_ALL", { method: "DELETE" });
+    const data = await res.json();
+    if (!res.ok) return setMsg(data.message || "Erro ao apagar questoes");
+
+    setPayload("");
+    setItems([]);
+    setMsg(`Foram apagadas ${data.deleted} questao(oes).`);
   }
 
   return (
@@ -78,12 +98,15 @@ Tags: opcional`}</div>
         placeholder="Cole varias questoes em sequencia..."
       />
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button className="btn-primary" type="button" onClick={preview}>
           Validar e gerar previa
         </button>
         <button className="btn border" type="button" onClick={save} disabled={!items.length || hasErrors}>
           Salvar validas
+        </button>
+        <button className="btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100" type="button" onClick={deleteAllQuestions}>
+          Apagar todas
         </button>
       </div>
 
@@ -91,7 +114,13 @@ Tags: opcional`}</div>
 
       {!!items.length && (
         <div className="space-y-2">
-          {items.map((item) => (
+          {items.length > PREVIEW_LIMIT && (
+            <div className="card text-sm text-slate-600">
+              Mostrando as primeiras {PREVIEW_LIMIT} de {items.length} questoes identificadas para manter a tela leve.
+            </div>
+          )}
+
+          {visibleItems.map((item) => (
             <div key={item.index} className="card">
               <p className="font-semibold">Questao #{item.index}</p>
               {item.errors.length > 0 ? (

@@ -15,7 +15,6 @@ export default async function Questions({ searchParams }: { searchParams: { q?: 
         }
       : undefined,
     orderBy: { createdAt: "desc" },
-    take: 100,
     include: {
       _count: {
         select: {

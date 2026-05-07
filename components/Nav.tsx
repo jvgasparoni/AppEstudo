@@ -6,10 +6,10 @@ const links = [
   { href: "/questions/new", label: "Nova questao" },
   { href: "/questions/import", label: "Importar" },
   { href: "/train", label: "Praticar" },
-  { href: "/exams", label: "Simulados" },
+  { href: "/exams", label: "Gerir Simulados" },
+  { href: "/exams/history", label: "Simulados Realizados" },
   { href: "/flashcards", label: "Flashcards" },
   { href: "/flashcards/review", label: "Revisao" },
-  { href: "/stats", label: "Estatisticas" },
 ];
 
 export default function Nav() {

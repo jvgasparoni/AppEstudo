@@ -1,6 +1,6 @@
 # Study MVP
 
-Aplicativo web de estudos (uso local/pessoal) com **Next.js + TypeScript + Tailwind + Prisma + SQLite**.
+Aplicativo web de estudos para uso local/pessoal com Next.js, TypeScript, Tailwind, Prisma e SQLite.
 
 ## Requisitos
 - Node.js 20+
@@ -8,12 +8,12 @@ Aplicativo web de estudos (uso local/pessoal) com **Next.js + TypeScript + Tailw
 
 ## Como rodar localmente
 
-1. Instale dependências:
+1. Instale dependencias:
 ```bash
 npm install
 ```
 
-2. Configure variáveis de ambiente:
+2. Configure variaveis de ambiente:
 ```bash
 cp .env.example .env
 ```
@@ -23,7 +23,7 @@ cp .env.example .env
 npx prisma generate
 ```
 
-4. Crie o banco SQLite e aplique migration inicial:
+4. Crie o banco SQLite e aplique a migration inicial:
 ```bash
 npx prisma migrate dev --name init
 ```
@@ -33,22 +33,30 @@ npx prisma migrate dev --name init
 npm run seed
 ```
 
-6. Suba a aplicação:
+6. Suba a aplicacao:
 ```bash
 npm run dev
 ```
 
-7. (Opcional) Abrir Prisma Studio para inspeção do banco:
+7. Se o cache do Next ficar inconsistente, reinicie limpo:
+```bash
+npm run dev:clean
+```
+
+8. Opcional: abra Prisma Studio para inspecao do banco:
 ```bash
 npx prisma studio
 ```
 
-## Scripts disponíveis
-- `npm run dev` — inicia ambiente de desenvolvimento
-- `npm run build` — build de produção
-- `npm run start` — inicia build de produção
-- `npm run seed` — executa seed do Prisma
-- `npm test` — executa testes unitários
+## Scripts disponiveis
+- `npm run dev` - inicia ambiente de desenvolvimento
+- `npm run dev:clean` - limpa `.next` e inicia ambiente de desenvolvimento
+- `npm run build` - build de producao
+- `npm run build:clean` - limpa `.next` e executa build de producao
+- `npm run start` - inicia build de producao
+- `npm run clean` - remove o cache/artefatos gerados pelo Next em `.next`
+- `npm run seed` - executa seed do Prisma
+- `npm test` - executa testes unitarios
 
 ## Rotas principais
 - `/dashboard`
@@ -57,9 +65,14 @@ npx prisma studio
 - `/questions/import`
 - `/train`
 - `/exams`
+- `/exams/history`
 - `/flashcards`
 - `/flashcards/review`
-- `/stats`
 
-## Validação manual
-Use o checklist em `TESTING.md` para validar persistência de dados, importações e fluxos de treino/simulado/flashcards.
+## Solucao de problemas
+Se aparecer erro como `Cannot find module './948.js'` vindo de `.next/server/webpack-runtime.js`, normalmente o cache de desenvolvimento do Next ficou inconsistente. Pare o servidor, rode `npm run dev:clean` e abra a aplicacao novamente.
+
+Evite apagar a pasta `.next` enquanto `npm run dev` estiver em execucao, porque o servidor pode continuar apontando para chunks antigos que ja foram removidos.
+
+## Validacao manual
+Use o checklist em `TESTING.md` para validar persistencia de dados, importacoes e fluxos de treino, simulado e flashcards.

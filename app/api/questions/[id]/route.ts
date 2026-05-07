@@ -1,56 +1,31 @@
 import { prisma } from "@/lib/prisma";
-
-const validOptions = ["A", "B", "C", "D", "E"];
-const validDifficulties = ["EASY", "MEDIUM", "HARD"] as const;
-
-function text(f: FormData, key: string) {
-  return String(f.get(key) || "").trim();
-}
-
-function getData(f: FormData) {
-  const correctOption = text(f, "correctOption").toUpperCase();
-  const difficulty = text(f, "difficulty") || "MEDIUM";
-
-  return {
-    statement: text(f, "statement"),
-    optionA: text(f, "optionA"),
-    optionB: text(f, "optionB"),
-    optionC: text(f, "optionC"),
-    optionD: text(f, "optionD"),
-    optionE: text(f, "optionE"),
-    correctOption,
-    explanation: text(f, "explanation"),
-    subject: text(f, "subject"),
-    theme: text(f, "theme"),
-    subtheme: text(f, "subtheme") || null,
-    difficulty: (validDifficulties.includes(difficulty as (typeof validDifficulties)[number]) ? difficulty : "MEDIUM") as
-      | "EASY"
-      | "MEDIUM"
-      | "HARD",
-    tags: text(f, "tags"),
-    source: text(f, "source") || null,
-  };
-}
-
-function validateQuestion(data: ReturnType<typeof getData>) {
-  const required = ["statement", "optionA", "optionB", "optionC", "optionD", "optionE", "correctOption", "explanation", "subject", "theme"] as const;
-  const missing = required.filter((field) => !data[field]);
-  if (missing.length) return `Campos obrigatorios ausentes: ${missing.join(", ")}`;
-  if (!validOptions.includes(data.correctOption)) return "Resposta correta deve ser A, B, C, D ou E";
-  return null;
-}
+import { readQuestionFormData, validateQuestionInput } from "@/lib/questions";
+import { redirect } from "next/navigation";
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const f = await req.formData();
   const id = Number(params.id);
   if (!Number.isInteger(id)) return Response.json({ message: "ID invalido" }, { status: 400 });
 
-  const data = getData(f);
-  const error = validateQuestion(data);
+  const data = readQuestionFormData(f);
+  const error = validateQuestionInput(data);
   if (error) return Response.json({ message: error }, { status: 400 });
 
   const updated = await prisma.question.update({ where: { id }, data });
   return Response.json(updated);
+}
+
+export async function POST(req: Request, { params }: { params: { id: string } }) {
+  const f = await req.formData();
+  const id = Number(params.id);
+  if (!Number.isInteger(id)) return Response.json({ message: "ID invalido" }, { status: 400 });
+
+  const data = readQuestionFormData(f);
+  const error = validateQuestionInput(data);
+  if (error) return Response.json({ message: error }, { status: 400 });
+
+  await prisma.question.update({ where: { id }, data });
+  redirect("/questions");
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
@@ -59,11 +34,14 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   if (!Number.isInteger(id)) return Response.json({ message: "ID invalido" }, { status: 400 });
   if (confirmation !== "true") return Response.json({ message: "confirmacao obrigatoria: ?confirm=true" }, { status: 400 });
 
-  await prisma.$transaction([
-    prisma.questionAttempt.deleteMany({ where: { questionId: id } }),
-    prisma.examQuestion.deleteMany({ where: { questionId: id } }),
-    prisma.question.delete({ where: { id } }),
-  ]);
+  const deleted = await prisma.$transaction(async (tx) => {
+    await tx.questionAttempt.deleteMany({ where: { questionId: id } });
+    await tx.examQuestion.deleteMany({ where: { questionId: id } });
+    const result = await tx.question.deleteMany({ where: { id } });
+    return result.count;
+  });
+
+  if (!deleted) return Response.json({ message: "Questao nao encontrada" }, { status: 404 });
 
   return Response.json({ ok: true });
 }

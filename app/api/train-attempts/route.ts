@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isQuestionOption } from "@/lib/questions";
 import { isCorrect } from "@/lib/srs";
 import { redirect } from "next/navigation";
 
@@ -7,7 +8,7 @@ export async function POST(req: Request) {
   const questionId = Number(f.get("questionId"));
   const selectedOption = String(f.get("selectedOption") || "").trim().toUpperCase();
 
-  if (!Number.isInteger(questionId) || !["A", "B", "C", "D", "E"].includes(selectedOption)) {
+  if (!Number.isInteger(questionId) || !isQuestionOption(selectedOption)) {
     return Response.json({ message: "Resposta invalida" }, { status: 400 });
   }
 

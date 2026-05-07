@@ -1,6 +1,12 @@
 export type Rating = "AGAIN" | "HARD" | "GOOD" | "EASY";
 export type SrsState = { intervalDays: number; easeFactor: number; reviewCount: number; lapseCount: number };
 
+export const ratings = ["AGAIN", "HARD", "GOOD", "EASY"] as const;
+
+export function isRating(value: string): value is Rating {
+  return ratings.includes(value as Rating);
+}
+
 export function nextSrs(state: SrsState, rating: Rating, options?: { againToday?: boolean }) {
   const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
   let intervalDays = state.intervalDays;
