@@ -128,6 +128,12 @@ export default async function ExamReviewPage({ params }: { params: { id: string 
               <p className="text-sm">
                 Marcada: <span className="font-semibold">{selected}</span> | Correta: <span className="font-semibold">{correct}</span>
               </p>
+              {!isRight && (
+                <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                  <p className="font-semibold">Explicacao</p>
+                  <p className="mt-1 whitespace-pre-wrap">{question.explanation || "Nenhuma explicacao cadastrada para esta questao."}</p>
+                </div>
+              )}
             </article>
           );
         })}

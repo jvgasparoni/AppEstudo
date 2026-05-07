@@ -1,9 +1,13 @@
+import { getQuestionDomain, sortDomains } from "@/lib/domains";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 type TrainSearchParams = {
+  domain?: string;
   result?: string;
   correct?: string;
   answer?: string;
+  reviewQuestionId?: string;
 };
 
 const optionKeys = ["A", "B", "C", "D", "E"] as const;
@@ -13,8 +17,20 @@ const difficultyLabel: Record<string, string> = {
   HARD: "Dificil",
 };
 
+function trainHref(domain: string) {
+  return domain === "all" ? "/train?domain=all" : `/train?domain=${encodeURIComponent(domain)}`;
+}
+
+function pickPracticeQuestion<T extends { _count: { attempts: number } }>(questions: T[]) {
+  if (!questions.length) return null;
+  const minAttempts = Math.min(...questions.map((question) => question._count.attempts));
+  const leastAttempted = questions.filter((question) => question._count.attempts === minAttempts);
+  return leastAttempted[Math.floor(Math.random() * leastAttempted.length)];
+}
+
 export default async function Train({ searchParams }: { searchParams: TrainSearchParams }) {
-  const question = await prisma.question.findFirst({
+  const selectedDomain = searchParams.domain || "all";
+  const readyQuestions = await prisma.question.findMany({
     where: {
       statement: { not: "" },
       optionA: { not: "" },
@@ -29,72 +45,125 @@ export default async function Train({ searchParams }: { searchParams: TrainSearc
         select: { attempts: true },
       },
     },
-    orderBy: [{ attempts: { _count: "asc" } }, { createdAt: "desc" }],
   });
 
-  if (!question) {
-    return (
-      <div className="card space-y-3">
-        <p className="font-semibold">Sem questoes prontas para treino.</p>
-        <p className="text-sm text-slate-600">Cadastre ou importe questoes com enunciado, alternativas A-E e resposta correta.</p>
-        <a className="btn-primary inline-block" href="/questions/new">
-          Criar questao
-        </a>
-      </div>
-    );
+  const domainCounts = new Map<string, number>();
+  for (const question of readyQuestions) {
+    const domain = getQuestionDomain(question);
+    domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
   }
+  const domains = Array.from(domainCounts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort(sortDomains);
 
-  const options = optionKeys.map((key) => ({
-    key,
-    text: question[`option${key}` as const],
-  }));
+  const filteredQuestions = selectedDomain === "all" ? readyQuestions : readyQuestions.filter((question) => getQuestionDomain(question) === selectedDomain);
+  const question = pickPracticeQuestion(filteredQuestions);
+
   const wasCorrect = searchParams.result === "correct";
   const wasWrong = searchParams.result === "wrong";
+  const reviewQuestionId = Number(searchParams.reviewQuestionId);
+  const reviewQuestion = Number.isInteger(reviewQuestionId) ? await prisma.question.findUnique({ where: { id: reviewQuestionId } }) : null;
+  const showFeedback = (wasCorrect || wasWrong) && reviewQuestion;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-      <form action="/api/train-attempts" method="post" className="card space-y-4">
-        <input type="hidden" name="questionId" value={question.id} />
-
-        {(wasCorrect || wasWrong) && (
-          <div className={wasCorrect ? "rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" : "rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800"}>
-            {wasCorrect ? "Resposta correta." : `Resposta incorreta. Correta: ${searchParams.correct || "-"}. Voce marcou: ${searchParams.answer || "-"}.`}
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-          <span className="rounded border px-2 py-1">{question.subject || "Sem materia"}</span>
-          <span className="rounded border px-2 py-1">{question.theme || "Sem tema"}</span>
-          <span className="rounded border px-2 py-1">{difficultyLabel[question.difficulty] || question.difficulty}</span>
+    <div className="space-y-4">
+      <section className="card space-y-3">
+        <div>
+          <p className="font-semibold">Praticar</p>
+          <p className="text-sm text-slate-600">Escolha um dominio ou pratique com questoes misturadas de todos os dominios.</p>
         </div>
-
-        <p className="text-lg font-semibold leading-relaxed">{question.statement}</p>
-
-        <fieldset className="space-y-2">
-          {options.map((option) => (
-            <label key={option.key} className="flex cursor-pointer gap-3 rounded border p-3 hover:bg-slate-50">
-              <input className="mt-1" type="radio" name="selectedOption" value={option.key} required />
-              <span>
-                <span className="font-semibold">{option.key}) </span>
-                {option.text}
-              </span>
-            </label>
+        <div className="flex flex-wrap gap-2">
+          <Link className={selectedDomain === "all" ? "rounded border border-blue-600 bg-blue-600 px-3 py-2 text-sm font-medium text-white" : "rounded border bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"} href={trainHref("all")}>
+            Todos os dominios
+          </Link>
+          {domains.map((domain) => (
+            <Link
+              key={domain.name}
+              className={
+                selectedDomain === domain.name
+                  ? "rounded border border-blue-600 bg-blue-600 px-3 py-2 text-sm font-medium text-white"
+                  : "rounded border bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
+              }
+              href={trainHref(domain.name)}
+            >
+              {domain.name} ({domain.count})
+            </Link>
           ))}
-        </fieldset>
-
-        <button className="btn-primary">Responder</button>
-      </form>
-
-      <aside className="space-y-3">
-        <div className="card">
-          <p className="text-sm text-slate-500">Tentativas nesta questao</p>
-          <p className="text-2xl font-bold">{question._count.attempts}</p>
         </div>
-        <div className="card text-sm text-slate-600">
-          <p className="font-semibold text-slate-900">Modo pratica</p>
-          <p className="mt-1">As questoes menos treinadas aparecem primeiro, parecido com o fluxo de revisao de apps como Anki e plataformas de simulados.</p>
+      </section>
+
+      {showFeedback && (
+        <section className={wasCorrect ? "card border border-emerald-200 bg-emerald-50" : "card border border-red-200 bg-red-50"}>
+          <p className={wasCorrect ? "font-semibold text-emerald-800" : "font-semibold text-red-800"}>
+            {wasCorrect ? "Resposta correta." : "Resposta incorreta."}
+          </p>
+          <p className="mt-2 text-sm">
+            Voce marcou: <span className="font-semibold">{searchParams.answer || "-"}</span> | Correta:{" "}
+            <span className="font-semibold">{searchParams.correct || reviewQuestion.correctOption}</span>
+          </p>
+          {wasWrong && (
+            <div className="mt-3 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+              <p className="font-semibold">Explicacao</p>
+              <p className="mt-1 whitespace-pre-wrap">{reviewQuestion.explanation || "Nenhuma explicacao cadastrada para esta questao."}</p>
+            </div>
+          )}
+          <Link className="btn-primary mt-3 inline-block" href={trainHref(selectedDomain)}>
+            Proxima questao
+          </Link>
+        </section>
+      )}
+
+      {!showFeedback && !question && (
+        <div className="card space-y-3">
+          <p className="font-semibold">Sem questoes prontas para este filtro.</p>
+          <p className="text-sm text-slate-600">Cadastre ou importe questoes com enunciado, alternativas A-E e resposta correta.</p>
+          <Link className="btn-primary inline-block" href="/questions/new">
+            Criar questao
+          </Link>
         </div>
-      </aside>
+      )}
+
+      {!showFeedback && question && (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <form action="/api/train-attempts" method="post" className="card space-y-4">
+            <input type="hidden" name="questionId" value={question.id} />
+            <input type="hidden" name="domain" value={selectedDomain} />
+
+            <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+              <span className="rounded border px-2 py-1">{question.subject || "Sem materia"}</span>
+              <span className="rounded border px-2 py-1">{getQuestionDomain(question)}</span>
+              <span className="rounded border px-2 py-1">{difficultyLabel[question.difficulty] || question.difficulty}</span>
+            </div>
+
+            <p className="text-lg font-semibold leading-relaxed">{question.statement}</p>
+
+            <fieldset className="space-y-2">
+              {optionKeys.map((key) => (
+                <label key={key} className="flex cursor-pointer gap-3 rounded border p-3 hover:bg-slate-50">
+                  <input className="mt-1" type="radio" name="selectedOption" value={key} required />
+                  <span>
+                    <span className="font-semibold">{key}) </span>
+                    {question[`option${key}`]}
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+
+            <button className="btn-primary">Responder</button>
+          </form>
+
+          <aside className="space-y-3">
+            <div className="card">
+              <p className="text-sm text-slate-500">Tentativas nesta questao</p>
+              <p className="text-2xl font-bold">{question._count.attempts}</p>
+            </div>
+            <div className="card text-sm text-slate-600">
+              <p className="font-semibold text-slate-900">Modo pratica</p>
+              <p className="mt-1">As questoes menos treinadas aparecem primeiro dentro do filtro selecionado.</p>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

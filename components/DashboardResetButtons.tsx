@@ -3,15 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+type ResetKind = "answered" | "accuracy" | "allTimeAccuracy";
+
+const labels: Record<ResetKind, string> = {
+  answered: "respondidas atuais",
+  accuracy: "acerto atual",
+  allTimeAccuracy: "acerto geral",
+};
+
 export default function DashboardResetButtons() {
   const router = useRouter();
   const [message, setMessage] = useState("");
-  const [resetting, setResetting] = useState<"answered" | "accuracy" | null>(null);
+  const [resetting, setResetting] = useState<ResetKind | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  async function reset(kind: "answered" | "accuracy") {
-    const label = kind === "answered" ? "respondidas atuais" : "acerto atual";
-    if (!window.confirm(`Resetar ${label}? O historico geral sera mantido.`)) return;
+  async function reset(kind: ResetKind) {
+    const label = labels[kind];
+    if (!window.confirm(`Resetar ${label}? O historico de tentativas sera mantido.`)) return;
 
     setResetting(kind);
     setMessage("");
@@ -35,25 +43,23 @@ export default function DashboardResetButtons() {
   return (
     <div className="card space-y-3">
       <div>
-        <p className="font-semibold">Resets do contador atual</p>
-        <p className="text-sm text-slate-600">Os totais de todos os tempos continuam preservados.</p>
+        <p className="font-semibold">Resets de contadores</p>
+        <p className="text-sm text-slate-600">Os resets mudam os contadores exibidos, mas nao apagam o historico de tentativas.</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button
-          className="btn border bg-white disabled:opacity-60"
-          type="button"
-          disabled={resetting === "answered" || isPending}
-          onClick={() => reset("answered")}
-        >
+        <button className="btn border bg-white disabled:opacity-60" type="button" disabled={resetting === "answered" || isPending} onClick={() => reset("answered")}>
           {resetting === "answered" ? "Resetando..." : "Resetar respondidas"}
         </button>
+        <button className="btn border bg-white disabled:opacity-60" type="button" disabled={resetting === "accuracy" || isPending} onClick={() => reset("accuracy")}>
+          {resetting === "accuracy" ? "Resetando..." : "Resetar acerto atual"}
+        </button>
         <button
-          className="btn border bg-white disabled:opacity-60"
+          className="btn border border-red-200 bg-red-50 text-red-700 disabled:opacity-60"
           type="button"
-          disabled={resetting === "accuracy" || isPending}
-          onClick={() => reset("accuracy")}
+          disabled={resetting === "allTimeAccuracy" || isPending}
+          onClick={() => reset("allTimeAccuracy")}
         >
-          {resetting === "accuracy" ? "Resetando..." : "Resetar acerto"}
+          {resetting === "allTimeAccuracy" ? "Resetando..." : "Resetar acerto geral"}
         </button>
       </div>
       {message && <p className="text-sm text-slate-700">{message}</p>}

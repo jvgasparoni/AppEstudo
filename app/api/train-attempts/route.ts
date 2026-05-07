@@ -7,6 +7,7 @@ export async function POST(req: Request) {
   const f = await req.formData();
   const questionId = Number(f.get("questionId"));
   const selectedOption = String(f.get("selectedOption") || "").trim().toUpperCase();
+  const domain = String(f.get("domain") || "all").trim() || "all";
 
   if (!Number.isInteger(questionId) || !isQuestionOption(selectedOption)) {
     return Response.json({ message: "Resposta invalida" }, { status: 400 });
@@ -25,5 +26,13 @@ export async function POST(req: Request) {
     },
   });
 
-  redirect(`/train?result=${correct ? "correct" : "wrong"}&correct=${question.correctOption}&answer=${selectedOption}`);
+  const params = new URLSearchParams({
+    domain,
+    result: correct ? "correct" : "wrong",
+    correct: question.correctOption,
+    answer: selectedOption,
+    reviewQuestionId: String(question.id),
+  });
+
+  redirect(`/train?${params.toString()}`);
 }
