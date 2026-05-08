@@ -63,11 +63,14 @@ export function buildExamBlueprintPlan(questions: ExamQuestionSource[], amountVa
 
 export function buildCustomDomainPlan(
   questions: ExamQuestionSource[],
-  requestedDomains: Array<{ theme: string; amount: unknown }>,
+  requestedDomains: Array<{ theme: string; amount: unknown }> | undefined = [],
   shuffleFn: ShuffleFn = shuffle,
 ): ExamPlanResult {
   const requested = requestedDomains
-    .map((domain) => ({ theme: String(domain.theme || "").trim(), amount: validAmount(domain.amount) }))
+    .map((domain) => {
+      const theme = String(domain.theme || "").trim();
+      return { theme: theme ? getQuestionDomain({ theme }) : "", amount: validAmount(domain.amount) };
+    })
     .filter((domain) => domain.theme && domain.amount > 0);
 
   if (!requested.length) return { ok: false, message: "Informe ao menos um dominio com quantidade maior que zero." };

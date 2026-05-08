@@ -1,5 +1,6 @@
 "use client";
 
+import { questionDifficultyLabels } from "@/lib/questions";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -16,12 +17,6 @@ type QuestionItem = {
     attempts: number;
     examQuestions: number;
   };
-};
-
-const difficultyLabel: Record<string, string> = {
-  EASY: "Facil",
-  MEDIUM: "Medio",
-  HARD: "Dificil",
 };
 
 export default function QuestionManager({ questions, query }: { questions: QuestionItem[]; query: string }) {
@@ -104,7 +99,7 @@ export default function QuestionManager({ questions, query }: { questions: Quest
                   <div className="mb-2 flex flex-wrap gap-2 text-xs text-slate-600">
                     <span className="rounded border px-2 py-1">{item.subject || "Sem materia"}</span>
                     <span className="rounded border px-2 py-1">{item.theme || "Sem tema"}</span>
-                    <span className="rounded border px-2 py-1">{difficultyLabel[item.difficulty] || item.difficulty}</span>
+                    <span className="rounded border px-2 py-1">{questionDifficultyLabels[item.difficulty as keyof typeof questionDifficultyLabels] || item.difficulty}</span>
                     {item.tags && <span className="rounded border px-2 py-1">{item.tags}</span>}
                   </div>
                   <p className="font-semibold leading-snug">{item.statement}</p>

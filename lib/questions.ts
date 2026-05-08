@@ -3,6 +3,13 @@ export const questionDifficulties = ["EASY", "MEDIUM", "HARD"] as const;
 
 export type QuestionOption = (typeof questionOptions)[number];
 export type QuestionDifficulty = (typeof questionDifficulties)[number];
+export type QuestionOptionTextSource = Record<`option${QuestionOption}`, string>;
+
+export const questionDifficultyLabels: Record<QuestionDifficulty, string> = {
+  EASY: "Facil",
+  MEDIUM: "Medio",
+  HARD: "Dificil",
+};
 
 export type QuestionInput = {
   statement: string;
@@ -27,6 +34,10 @@ export function formText(formData: FormData, key: string) {
 
 export function isQuestionOption(value: string): value is QuestionOption {
   return questionOptions.includes(value as QuestionOption);
+}
+
+export function getQuestionOptionText(question: QuestionOptionTextSource, option: QuestionOption) {
+  return question[`option${option}`];
 }
 
 export function normalizeDifficulty(value: string): QuestionDifficulty {

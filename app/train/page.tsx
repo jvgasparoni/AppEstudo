@@ -1,5 +1,7 @@
-import { getQuestionDomain, sortDomains } from "@/lib/domains";
+import { getDomainCounts, getQuestionDomain } from "@/lib/domains";
+import { pickLeastAttemptedQuestion } from "@/lib/practice";
 import { prisma } from "@/lib/prisma";
+import { getQuestionOptionText, questionDifficultyLabels, questionOptions } from "@/lib/questions";
 import Link from "next/link";
 
 type TrainSearchParams = {
@@ -10,22 +12,8 @@ type TrainSearchParams = {
   reviewQuestionId?: string;
 };
 
-const optionKeys = ["A", "B", "C", "D", "E"] as const;
-const difficultyLabel: Record<string, string> = {
-  EASY: "Facil",
-  MEDIUM: "Medio",
-  HARD: "Dificil",
-};
-
 function trainHref(domain: string) {
   return domain === "all" ? "/train?domain=all" : `/train?domain=${encodeURIComponent(domain)}`;
-}
-
-function pickPracticeQuestion<T extends { _count: { attempts: number } }>(questions: T[]) {
-  if (!questions.length) return null;
-  const minAttempts = Math.min(...questions.map((question) => question._count.attempts));
-  const leastAttempted = questions.filter((question) => question._count.attempts === minAttempts);
-  return leastAttempted[Math.floor(Math.random() * leastAttempted.length)];
 }
 
 export default async function Train({ searchParams }: { searchParams: TrainSearchParams }) {
@@ -47,17 +35,9 @@ export default async function Train({ searchParams }: { searchParams: TrainSearc
     },
   });
 
-  const domainCounts = new Map<string, number>();
-  for (const question of readyQuestions) {
-    const domain = getQuestionDomain(question);
-    domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
-  }
-  const domains = Array.from(domainCounts.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort(sortDomains);
-
+  const domains = getDomainCounts(readyQuestions);
   const filteredQuestions = selectedDomain === "all" ? readyQuestions : readyQuestions.filter((question) => getQuestionDomain(question) === selectedDomain);
-  const question = pickPracticeQuestion(filteredQuestions);
+  const question = pickLeastAttemptedQuestion(filteredQuestions);
 
   const wasCorrect = searchParams.result === "correct";
   const wasWrong = searchParams.result === "wrong";
@@ -132,18 +112,18 @@ export default async function Train({ searchParams }: { searchParams: TrainSearc
             <div className="flex flex-wrap gap-2 text-xs text-slate-600">
               <span className="rounded border px-2 py-1">{question.subject || "Sem materia"}</span>
               <span className="rounded border px-2 py-1">{getQuestionDomain(question)}</span>
-              <span className="rounded border px-2 py-1">{difficultyLabel[question.difficulty] || question.difficulty}</span>
+              <span className="rounded border px-2 py-1">{questionDifficultyLabels[question.difficulty as keyof typeof questionDifficultyLabels] || question.difficulty}</span>
             </div>
 
             <p className="text-lg font-semibold leading-relaxed">{question.statement}</p>
 
             <fieldset className="space-y-2">
-              {optionKeys.map((key) => (
+              {questionOptions.map((key) => (
                 <label key={key} className="flex cursor-pointer gap-3 rounded border p-3 hover:bg-slate-50">
                   <input className="mt-1" type="radio" name="selectedOption" value={key} required />
                   <span>
                     <span className="font-semibold">{key}) </span>
-                    {question[`option${key}`]}
+                    {getQuestionOptionText(question, key)}
                   </span>
                 </label>
               ))}

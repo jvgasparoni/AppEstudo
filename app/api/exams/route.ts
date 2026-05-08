@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     body.mode === "examBlueprint"
       ? buildExamBlueprintPlan(questions, body.amount)
       : body.mode === "custom"
-        ? buildCustomDomainPlan(questions, body.domains)
+        ? buildCustomDomainPlan(questions, Array.isArray(body.domains) ? body.domains : [])
         : { ok: false as const, message: "Modo de simulado invalido." };
 
   if (!plan.ok) return Response.json({ message: plan.message }, { status: 400 });

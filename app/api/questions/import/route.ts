@@ -5,7 +5,9 @@ import { Prisma } from "@prisma/client";
 const IMPORT_BATCH_SIZE = 100;
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  const body = (await req.json().catch(() => null)) as { mode?: string; payload?: string } | null;
+  if (!body) return Response.json({ message: "Dados invalidos" }, { status: 400 });
+
   const mode = body.mode as "preview" | "save";
   const payload = String(body.payload || "");
 

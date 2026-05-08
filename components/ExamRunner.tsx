@@ -1,5 +1,6 @@
 "use client";
 
+import { getQuestionOptionText, questionOptions } from "@/lib/questions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -14,12 +15,6 @@ type Question = {
   theme: string;
   domain: string;
 };
-
-const options = ["A", "B", "C", "D", "E"] as const;
-
-function optionText(question: Question, option: (typeof options)[number]) {
-  return question[`option${option}`];
-}
 
 export default function ExamRunner({ examId, title, questions }: { examId: number; title: string; questions: Question[] }) {
   const router = useRouter();
@@ -71,7 +66,7 @@ export default function ExamRunner({ examId, title, questions }: { examId: numbe
           </div>
           <p className="font-semibold leading-relaxed">{question.statement}</p>
           <fieldset className="space-y-2">
-            {options.map((option) => (
+            {questionOptions.map((option) => (
               <label key={option} className="flex cursor-pointer gap-3 rounded border p-3 hover:bg-slate-50">
                 <input
                   className="mt-1"
@@ -83,7 +78,7 @@ export default function ExamRunner({ examId, title, questions }: { examId: numbe
                 />
                 <span>
                   <span className="font-semibold">{option}) </span>
-                  {optionText(question, option)}
+                  {getQuestionOptionText(question, option)}
                 </span>
               </label>
             ))}

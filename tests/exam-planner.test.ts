@@ -29,6 +29,16 @@ test("custom domain plan reports shortage clearly", () => {
   if (!result.ok) assert.match(result.message, /existem 1 questao/);
 });
 
+test("custom domain plan accepts domain aliases and empty requests", () => {
+  const result = buildCustomDomainPlan(questions("Dominio 1", 2), [{ theme: "D1", amount: 1 }], keepOrder);
+  const empty = buildCustomDomainPlan(questions("Dominio 1", 2), undefined, keepOrder);
+
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.selectedIds, [1]);
+  assert.equal(empty.ok, false);
+  if (!empty.ok) assert.match(empty.message, /ao menos um dominio/);
+});
+
 test("build exam blueprint plan using comptia proportions", () => {
   const source = [
     ...questions("Dominio 1", 20, 100),
@@ -42,6 +52,13 @@ test("build exam blueprint plan using comptia proportions", () => {
 
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.selectedIds.length, 10);
+});
+
+test("exam blueprint plan validates requested amount", () => {
+  assert.deepEqual(buildExamBlueprintPlan(questions("Dominio 1", 2), 0, keepOrder), {
+    ok: false,
+    message: "Informe uma quantidade valida de questoes.",
+  });
 });
 
 test("exam blueprint plan validates domain availability", () => {

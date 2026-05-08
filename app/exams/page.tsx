@@ -1,5 +1,5 @@
 import ExamManager from "@/components/ExamManager";
-import { getQuestionDomain, sortDomains } from "@/lib/domains";
+import { getDomainCounts } from "@/lib/domains";
 import { prisma } from "@/lib/prisma";
 
 export default async function Exams() {
@@ -10,15 +10,7 @@ export default async function Exams() {
     },
   });
 
-  const counts = new Map<string, number>();
-  for (const question of questions) {
-    const domain = getQuestionDomain(question);
-    counts.set(domain, (counts.get(domain) || 0) + 1);
-  }
-
-  const domains = Array.from(counts.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort(sortDomains);
+  const domains = getDomainCounts(questions);
 
   return (
     <div className="space-y-4">

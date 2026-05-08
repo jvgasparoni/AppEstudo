@@ -4,7 +4,7 @@
 - [ ] `npm install`
 - [ ] `cp .env.example .env`
 - [ ] `npx prisma generate`
-- [ ] `npx prisma migrate dev --name init`
+- [ ] `npx prisma migrate deploy`
 - [ ] `npm run seed`
 - [ ] `npm run dev`
 - [ ] Se aparecer erro de chunk ausente em `.next`, parar o servidor e rodar `npm run dev:clean`.
@@ -19,12 +19,15 @@
 - [ ] Import invalido em `/questions/import` nao salva dados.
 - [ ] Import valido salva lote completo.
 
-## Treino
+## Praticar
 - [ ] Responder em `/train` cria `QuestionAttempt` com `mode=TRAIN`.
 - [ ] Registro contem `questionId`, `selectedOption`, `correct` e `createdAt`.
+- [ ] Filtro por dominio mostra apenas questoes daquele dominio.
+- [ ] Filtro "Todos os dominios" mistura questoes de todos os dominios.
+- [ ] Ao errar, a tela mostra alternativa correta e explicacao.
 
 ## Simulados
-- [ ] Criar simulado aleatorio em `/exams` gera `Exam`.
+- [ ] Criar simulado prova em `/exams` gera `Exam` seguindo a proporcao Security+.
 - [ ] Criar simulado personalizado por dominio em `/exams` gera `Exam` com mais de um dominio.
 - [ ] Solicitar mais questoes do que um dominio possui mostra mensagem clara e nao cria simulado.
 - [ ] Questoes do simulado sao gravadas em `ExamQuestion`.
@@ -37,6 +40,8 @@
 - [ ] `/dashboard` reflete tentativas reais gravadas no banco.
 - [ ] Taxas mudam apos novas respostas de treino/simulado.
 - [ ] Contadores resetaveis podem ser zerados sem apagar historico geral.
+- [ ] Analise por periodo combina filtro de 7/15/30 dias/desde sempre com origem Tudo/Simulados/Praticar.
+- [ ] Resetar respondidas no Praticar remove tentativas antigas do Praticar tambem no filtro "Tudo".
 
 ## Flashcards
 - [ ] Criar flashcard em `/flashcards` salva em `Flashcard`.

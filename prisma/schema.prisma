@@ -98,5 +98,6 @@ model DashboardCounterReset {
   answeredResetAt        DateTime @default(dbgenerated("'1970-01-01T00:00:00.000Z'"))
   accuracyResetAt        DateTime @default(dbgenerated("'1970-01-01T00:00:00.000Z'"))
   allTimeAccuracyResetAt DateTime @default(dbgenerated("'1970-01-01T00:00:00.000Z'"))
+  trainAnsweredResetAt   DateTime @default(dbgenerated("'1970-01-01T00:00:00.000Z'"))
   updatedAt              DateTime @updatedAt
 }

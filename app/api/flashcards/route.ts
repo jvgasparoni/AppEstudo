@@ -1,22 +1,14 @@
+import { readFlashcardFormData, validateFlashcardInput } from "@/lib/flashcards";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { redirect } from "next/navigation";
 
-function text(f: FormData, key: string) {
-  return String(f.get(key) || "").trim();
-}
-
 export async function POST(req: Request) {
   const f = await req.formData();
-  const data = {
-    front: text(f, "front"),
-    back: text(f, "back"),
-    subject: text(f, "subject"),
-    theme: text(f, "theme"),
-    tags: text(f, "tags"),
-  };
+  const data = readFlashcardFormData(f);
+  const error = validateFlashcardInput(data);
 
-  if (!data.front || !data.back) return Response.json({ message: "Frente e verso sao obrigatorios" }, { status: 400 });
+  if (error) return Response.json({ message: error }, { status: 400 });
 
   await prisma.flashcard.create({ data });
   redirect("/flashcards");

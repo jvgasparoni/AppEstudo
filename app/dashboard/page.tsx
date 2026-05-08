@@ -58,7 +58,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { peri
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Contador atual</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <StatCard label="Respondidas atuais" value={d.resettable.answered} hint="Desde o ultimo reset de respondidas" />
           <StatCard label="Acertos atuais" value={d.resettable.accuracyCorrect} hint="Desde o ultimo reset de acerto atual" />
           <StatCard
@@ -66,6 +66,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { peri
             value={`${d.resettable.accuracyRate}%`}
             hint={`${d.resettable.accuracyCorrect}/${d.resettable.accuracyTotal} desde o ultimo reset`}
           />
+          <StatCard label="Respondidas no Praticar" value={d.resettable.trainAnswered} hint="Desde o ultimo reset de Praticar" />
         </div>
       </section>
 

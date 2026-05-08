@@ -1,14 +1,9 @@
 import { getExamStats } from "@/lib/exam-results";
 import { getQuestionDomain } from "@/lib/domains";
 import { prisma } from "@/lib/prisma";
+import { getQuestionOptionText, questionOptions } from "@/lib/questions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-const options = ["A", "B", "C", "D", "E"] as const;
-
-function optionText(question: { optionA: string; optionB: string; optionC: string; optionD: string; optionE: string }, option: (typeof options)[number]) {
-  return question[`option${option}`];
-}
 
 export default async function ExamReviewPage({ params }: { params: { id: string } }) {
   const id = Number(params.id);
@@ -105,7 +100,7 @@ export default async function ExamReviewPage({ params }: { params: { id: string 
               </div>
               <p className="font-semibold leading-relaxed">{question.statement}</p>
               <ul className="space-y-2 text-sm">
-                {options.map((option) => {
+                {questionOptions.map((option) => {
                   const isSelected = selected === option;
                   const isCorrectOption = correct === option;
                   return (
@@ -120,7 +115,7 @@ export default async function ExamReviewPage({ params }: { params: { id: string 
                       }
                     >
                       <span className="font-semibold">{option}) </span>
-                      {optionText(question, option)}
+                      {getQuestionOptionText(question, option)}
                     </li>
                   );
                 })}

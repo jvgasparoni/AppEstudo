@@ -1,3 +1,5 @@
+import { questionDifficulties, questionDifficultyLabels, questionOptions } from "@/lib/questions";
+
 type QuestionFormValues = {
   statement?: string;
   optionA?: string;
@@ -67,20 +69,20 @@ export default function QuestionForm({ action, submitLabel, initialValues = {} }
           <option value="" disabled>
             Selecione
           </option>
-          <option>A</option>
-          <option>B</option>
-          <option>C</option>
-          <option>D</option>
-          <option>E</option>
+          {questionOptions.map((option) => (
+            <option key={option}>{option}</option>
+          ))}
         </select>
       </label>
 
       <label>
         <span className="text-sm font-medium text-slate-700">Dificuldade</span>
         <select name="difficulty" className="input mt-1" defaultValue={initialValues.difficulty || "MEDIUM"}>
-          <option value="EASY">Facil</option>
-          <option value="MEDIUM">Medio</option>
-          <option value="HARD">Dificil</option>
+          {questionDifficulties.map((difficulty) => (
+            <option key={difficulty} value={difficulty}>
+              {questionDifficultyLabels[difficulty]}
+            </option>
+          ))}
         </select>
       </label>
 

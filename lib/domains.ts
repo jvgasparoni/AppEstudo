@@ -62,6 +62,18 @@ export function sortDomains(a: { name: string }, b: { name: string }) {
   return a.name.localeCompare(b.name);
 }
 
+export function getDomainCounts<T extends DomainSource>(questions: T[]) {
+  const counts = new Map<string, number>();
+  for (const question of questions) {
+    const domain = getQuestionDomain(question);
+    counts.set(domain, (counts.get(domain) || 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort(sortDomains);
+}
+
 export function getExamBlueprintCounts(totalQuestions: number) {
   const safeTotal = Math.max(0, Math.floor(totalQuestions));
   const raw = comptiaSecurityPlusExamDomains.map((domain) => {

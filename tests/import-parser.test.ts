@@ -72,3 +72,25 @@ Tema: T`);
   assert.ok(res.errors.includes("Explicacao ausente"));
   assert.ok(res.errors.includes("Materia ausente"));
 });
+
+test("parse multiline options without merging alternatives", () => {
+  const text = `Enunciado: Qual alternativa possui duas linhas?
+A. Primeira linha da alternativa A
+continua aqui
+B. Alternativa B
+C. Alternativa C
+D. Alternativa D
+E. Alternativa E
+Resposta correta: A
+Explicacao: A alternativa A continua em duas linhas.
+Materia: Mat
+Tema: D1
+Dificuldade: medio`;
+
+  const [res] = parseFreeTextQuestions(text);
+
+  assert.equal(res.errors.length, 0);
+  assert.equal(res.parsed?.optionA, "Primeira linha da alternativa A\ncontinua aqui");
+  assert.equal(res.parsed?.optionB, "Alternativa B");
+  assert.equal(res.parsed?.optionE, "Alternativa E");
+});

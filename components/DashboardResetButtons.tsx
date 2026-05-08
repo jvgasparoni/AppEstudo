@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-type ResetKind = "answered" | "accuracy" | "allTimeAccuracy";
+type ResetKind = "current" | "allTimeAccuracy" | "trainAnswered";
 
 const labels: Record<ResetKind, string> = {
-  answered: "respondidas atuais",
-  accuracy: "acerto atual",
+  current: "contador atual",
   allTimeAccuracy: "acerto geral",
+  trainAnswered: "respondidas no Praticar",
 };
 
 export default function DashboardResetButtons() {
@@ -47,11 +47,16 @@ export default function DashboardResetButtons() {
         <p className="text-sm text-slate-600">Os resets mudam os contadores exibidos, mas nao apagam o historico de tentativas.</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button className="btn border bg-white disabled:opacity-60" type="button" disabled={resetting === "answered" || isPending} onClick={() => reset("answered")}>
-          {resetting === "answered" ? "Resetando..." : "Resetar respondidas"}
+        <button className="btn border bg-white disabled:opacity-60" type="button" disabled={resetting === "current" || isPending} onClick={() => reset("current")}>
+          {resetting === "current" ? "Resetando..." : "Resetar contador atual"}
         </button>
-        <button className="btn border bg-white disabled:opacity-60" type="button" disabled={resetting === "accuracy" || isPending} onClick={() => reset("accuracy")}>
-          {resetting === "accuracy" ? "Resetando..." : "Resetar acerto atual"}
+        <button
+          className="btn border bg-white disabled:opacity-60"
+          type="button"
+          disabled={resetting === "trainAnswered" || isPending}
+          onClick={() => reset("trainAnswered")}
+        >
+          {resetting === "trainAnswered" ? "Resetando..." : "Resetar respondidas no Praticar"}
         </button>
         <button
           className="btn border border-red-200 bg-red-50 text-red-700 disabled:opacity-60"

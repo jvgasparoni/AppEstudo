@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getExamBlueprintCounts, getQuestionDomain, sortDomains } from "../lib/domains";
+import { getDomainCounts, getExamBlueprintCounts, getQuestionDomain, normalizeText, sortDomains } from "../lib/domains";
+
+test("normalize text removes accents and lowercases", () => {
+  assert.equal(normalizeText("Domínio 1 — Segurança"), "dominio 1 — seguranca");
+});
 
 test("normalize domain aliases", () => {
   assert.equal(getQuestionDomain({ theme: "D1" }), "Dominio 1");
@@ -16,6 +20,19 @@ test("sort numbered domains naturally", () => {
     domains.map((domain) => domain.name),
     ["Dominio 1", "Dominio 2", "Dominio 10", "Outro"],
   );
+});
+
+test("count normalized domains", () => {
+  const counts = getDomainCounts([
+    { theme: "D1", tags: "" },
+    { theme: "Dominio 1", tags: "" },
+    { theme: "Tema solto", tags: "security-plus, d2" },
+  ]);
+
+  assert.deepEqual(counts, [
+    { name: "Dominio 1", count: 2 },
+    { name: "Dominio 2", count: 1 },
+  ]);
 });
 
 test("build comptia exam blueprint counts", () => {

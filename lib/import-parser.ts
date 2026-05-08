@@ -33,9 +33,11 @@ const difficultyMap: Record<string, QuestionDifficulty> = {
   hard: "HARD",
 };
 
+const optionLabelPattern = "[A-E][\\).]\\s+";
+
 const labelPatterns = [
   "Enunciado\\s*:",
-  "[A-E][\\).]",
+  optionLabelPattern,
   "Resposta correta\\s*:",
   "Explica(?:cao|\\u00e7\\u00e3o)\\s*:",
   "Mat(?:e|\\u00e9)ria\\s*:",
@@ -67,12 +69,12 @@ function splitQuestionBlocks(input: string) {
 }
 
 function capture(block: string, labelPattern: string) {
-  const pattern = new RegExp(`^${labelPattern}\\s*([\\s\\S]*?)(?=\\n(?:${labelPatterns})|$)`, "im");
+  const pattern = new RegExp(`^${labelPattern}\\s*([\\s\\S]*?)(?=\\n(?:${labelPatterns})|(?![\\s\\S]))`, "im");
   return block.match(pattern)?.[1]?.trim() || "";
 }
 
 function captureOption(block: string, option: string) {
-  const pattern = new RegExp(`^${option}[\\).]\\s*([\\s\\S]*?)(?=\\n[A-E][\\).]\\s|\\n(?:${labelPatterns})|$)`, "im");
+  const pattern = new RegExp(`^${option}[\\).]\\s*([\\s\\S]*?)(?=\\n(?:${labelPatterns})|(?![\\s\\S]))`, "im");
   return block.match(pattern)?.[1]?.trim() || "";
 }
 
