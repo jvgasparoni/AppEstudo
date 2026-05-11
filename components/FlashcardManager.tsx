@@ -6,8 +6,10 @@ import { useState, useTransition } from "react";
 type FlashcardItem = {
   id: number;
   front: string;
+  back: string;
   subject: string;
   theme: string;
+  tags: string;
   intervalDays: number;
   easeFactor: number;
   reviewCount: number;
@@ -83,24 +85,31 @@ export default function FlashcardManager({ flashcards }: { flashcards: Flashcard
         flashcards.map((card) => (
           <div className="card" key={card.id}>
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="font-medium">{card.front}</p>
-                <p className="text-sm">
+              <div className="min-w-0">
+                <p className="break-words font-medium">{card.front}</p>
+                <p className="mt-1 break-words text-sm text-slate-700">{card.back}</p>
+                <p className="break-words text-sm">
                   {card.subject || "Sem materia"}/{card.theme || "Sem tema"} | intervalo: {card.intervalDays}d | facilidade:{" "}
                   {card.easeFactor.toFixed(2)}
                 </p>
+                {card.tags && <p className="break-words text-xs text-slate-500">tags: {card.tags}</p>}
                 <p className="text-xs text-slate-500">
                   revisoes: {card.reviewCount} | erros: {card.lapseCount} | proxima: {new Date(card.nextReview).toLocaleDateString("pt-BR")}
                 </p>
               </div>
-              <button
-                className="btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-60"
-                type="button"
-                disabled={deletingId === card.id || isPending}
-                onClick={() => deleteFlashcard(card)}
-              >
-                {deletingId === card.id ? "Excluindo..." : "Excluir"}
-              </button>
+              <div className="flex gap-2 md:shrink-0">
+                <a className="btn border bg-white" href={`/flashcards/${card.id}/edit`}>
+                  Editar
+                </a>
+                <button
+                  className="btn border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-60"
+                  type="button"
+                  disabled={deletingId === card.id || isPending}
+                  onClick={() => deleteFlashcard(card)}
+                >
+                  {deletingId === card.id ? "Excluindo..." : "Excluir"}
+                </button>
+              </div>
             </div>
           </div>
         ))
