@@ -4,16 +4,16 @@ import { buildCustomDomainPlan, buildExamBlueprintPlan } from "../lib/exam-plann
 
 const keepOrder = <T>(items: T[]) => items;
 
-function questions(domain: string, amount: number, start = 1) {
-  return Array.from({ length: amount }, (_, index) => ({ id: start + index, theme: domain, tags: "" }));
+function questions(domain: string, amount: number, start = 1, theme = "Tema qualquer") {
+  return Array.from({ length: amount }, (_, index) => ({ id: start + index, subject: domain, theme }));
 }
 
-test("build custom domain plan with more than one domain", () => {
+test("build custom domain plan with more than one domain from subject", () => {
   const result = buildCustomDomainPlan(
-    [...questions("Dominio 1", 3, 1), ...questions("Dominio 2", 3, 10)],
+    [...questions("Dominio 1", 3, 1, "Privacidade"), ...questions("Dominio 2", 3, 10, "Malware")],
     [
-      { theme: "Dominio 1", amount: 2 },
-      { theme: "Dominio 2", amount: 1 },
+      { domainId: "domain-1", amount: 2 },
+      { domainId: "domain-2", amount: 1 },
     ],
     keepOrder,
   );
@@ -23,18 +23,20 @@ test("build custom domain plan with more than one domain", () => {
 });
 
 test("custom domain plan reports shortage clearly", () => {
-  const result = buildCustomDomainPlan(questions("Dominio 1", 1), [{ theme: "Dominio 1", amount: 2 }], keepOrder);
+  const result = buildCustomDomainPlan(questions("Dominio 1", 1), [{ domainId: "domain-1", amount: 2 }], keepOrder);
 
   assert.equal(result.ok, false);
   if (!result.ok) assert.match(result.message, /existem 1 questao/);
 });
 
 test("custom domain plan accepts domain aliases and empty requests", () => {
-  const result = buildCustomDomainPlan(questions("Dominio 1", 2), [{ theme: "D1", amount: 1 }], keepOrder);
+  const result = buildCustomDomainPlan(questions("Dominio 1", 2), [{ domain: "D1", amount: 1 }], keepOrder);
+  const legacy = buildCustomDomainPlan(questions("Dominio 1", 2), [{ theme: "Dominio 1", amount: 1 }], keepOrder);
   const empty = buildCustomDomainPlan(questions("Dominio 1", 2), undefined, keepOrder);
 
   assert.equal(result.ok, true);
   if (result.ok) assert.deepEqual(result.selectedIds, [1]);
+  assert.equal(legacy.ok, true);
   assert.equal(empty.ok, false);
   if (!empty.ok) assert.match(empty.message, /ao menos um dominio/);
 });
@@ -59,6 +61,13 @@ test("exam blueprint plan validates requested amount", () => {
     ok: false,
     message: "Informe uma quantidade valida de questoes.",
   });
+});
+
+test("exam blueprint ignores non-domain subjects when validating availability", () => {
+  const result = buildExamBlueprintPlan([...questions("Dominio 1", 2), ...questions("Tema solto", 20, 50)], 10, keepOrder);
+
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.match(result.message, /dominios principais/);
 });
 
 test("exam blueprint plan validates domain availability", () => {

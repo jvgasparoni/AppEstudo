@@ -1,9 +1,8 @@
-import { getExamBlueprintCounts, getQuestionDomain } from "./domains";
+import { comptiaSecurityPlusExamDomains, getDomainIdFromValue, getDomainLabelFromValue, getExamBlueprintCounts, getQuestionDomainInfo } from "./domains";
 
 export type ExamQuestionSource = {
   id: number;
-  theme?: string | null;
-  tags?: string | null;
+  subject?: string | null;
 };
 
 export type ExamPlanResult =
@@ -29,8 +28,8 @@ export function validAmount(value: unknown) {
 function groupByDomain(questions: ExamQuestionSource[]) {
   const byDomain = new Map<string, ExamQuestionSource[]>();
   for (const question of questions) {
-    const domain = getQuestionDomain(question);
-    byDomain.set(domain, [...(byDomain.get(domain) || []), question]);
+    const domain = getQuestionDomainInfo(question);
+    byDomain.set(domain.id, [...(byDomain.get(domain.id) || []), question]);
   }
   return byDomain;
 }
@@ -38,17 +37,18 @@ function groupByDomain(questions: ExamQuestionSource[]) {
 export function buildExamBlueprintPlan(questions: ExamQuestionSource[], amountValue: unknown, shuffleFn: ShuffleFn = shuffle): ExamPlanResult {
   const amount = validAmount(amountValue);
   if (!amount) return { ok: false, message: "Informe uma quantidade valida de questoes." };
-  if (questions.length < amount) {
-    return { ok: false, message: `Existem apenas ${questions.length} questao(oes) disponivel(is) para ${amount} solicitada(s).` };
+  const byDomain = groupByDomain(questions);
+  const availableInBlueprintDomains = comptiaSecurityPlusExamDomains.reduce((sum, domain) => sum + (byDomain.get(domain.id)?.length || 0), 0);
+  if (availableInBlueprintDomains < amount) {
+    return { ok: false, message: `Existem apenas ${availableInBlueprintDomains} questao(oes) dos dominios principais para ${amount} solicitada(s).` };
   }
 
-  const byDomain = groupByDomain(questions);
   const selectedIds: number[] = [];
 
   for (const domain of getExamBlueprintCounts(amount)) {
     if (domain.amount === 0) continue;
 
-    const available = byDomain.get(domain.domain) || [];
+    const available = byDomain.get(domain.id) || [];
     if (available.length < domain.amount) {
       return {
         ok: false,
@@ -63,15 +63,17 @@ export function buildExamBlueprintPlan(questions: ExamQuestionSource[], amountVa
 
 export function buildCustomDomainPlan(
   questions: ExamQuestionSource[],
-  requestedDomains: Array<{ theme: string; amount: unknown }> | undefined = [],
+  requestedDomains: Array<{ domain?: string; domainId?: string; theme?: string; amount: unknown }> | undefined = [],
   shuffleFn: ShuffleFn = shuffle,
 ): ExamPlanResult {
   const requested = requestedDomains
     .map((domain) => {
-      const theme = String(domain.theme || "").trim();
-      return { theme: theme ? getQuestionDomain({ theme }) : "", amount: validAmount(domain.amount) };
+      const rawDomain = String(domain.domainId || domain.domain || domain.theme || "").trim();
+      const domainId = rawDomain ? getDomainIdFromValue(rawDomain) : "";
+      const label = getDomainLabelFromValue(rawDomain);
+      return { domainId, label, amount: validAmount(domain.amount) };
     })
-    .filter((domain) => domain.theme && domain.amount > 0);
+    .filter((domain) => /^domain-[1-5]$/.test(domain.domainId) && domain.amount > 0);
 
   if (!requested.length) return { ok: false, message: "Informe ao menos um dominio com quantidade maior que zero." };
 
@@ -79,11 +81,11 @@ export function buildCustomDomainPlan(
   const selectedIds: number[] = [];
 
   for (const domain of requested) {
-    const available = byDomain.get(domain.theme) || [];
+    const available = byDomain.get(domain.domainId) || [];
     if (available.length < domain.amount) {
       return {
         ok: false,
-        message: `${domain.theme}: existem ${available.length} questao(oes), mas voce solicitou ${domain.amount}.`,
+        message: `${domain.label}: existem ${available.length} questao(oes), mas voce solicitou ${domain.amount}.`,
       };
     }
     selectedIds.push(...shuffleFn(available).slice(0, domain.amount).map((question) => question.id));

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { summarizeAttempts, summarizeByDomainSubtheme } from "../lib/stats-core";
+import { calculateStatsByDomain, calculateStatsByTopic, summarizeAttempts, summarizeByDomainTopic } from "../lib/stats-core";
 import { isCorrect, isRating, nextSrs } from "../lib/srs";
 import { getDashboardAnalysisWhere, normalizeDashboardPeriod, normalizeDashboardSource } from "../lib/stats";
 
@@ -20,37 +20,89 @@ test("summarize attempts", () => {
   assert.equal(result.correct, 2);
   assert.equal(result.rate, 67);
   assert.equal(result.bySubject.Mat.total, 2);
+  assert.equal(result.byTheme.A.total, 2);
 });
 
-test("summarize attempts by domain and subtheme", () => {
-  const result = summarizeByDomainSubtheme([
-    { correct: true, question: { subject: "Sec", theme: "D1", tags: "", subtheme: "CIA" } },
-    { correct: false, question: { subject: "Sec", theme: "Dominio 1", tags: "", subtheme: "CIA" } },
-    { correct: true, question: { subject: "Sec", theme: "D2", tags: "", subtheme: "Malware" } },
-    { correct: false, question: { subject: "Sec", theme: "D2", tags: "", subtheme: null } },
+test("summarize attempts by domain from subject and topic from theme", () => {
+  const attempts = [
+    { correct: true, question: { subject: "Domínio 5 - Security Program Management and Oversight", theme: "Privacidade" } },
+    { correct: false, question: { subject: "Dominio 5 - Security Program Management and Oversight", theme: "Privacidade" } },
+    { correct: true, question: { subject: "Dominio 1 - General Security Concepts", theme: "Criptografia" } },
+    { correct: false, question: { subject: "Dominio 1 - General Security Concepts", theme: "Criptografia" } },
+  ];
+
+  const domains = calculateStatsByDomain(attempts);
+  const topics = calculateStatsByTopic(attempts);
+  const nested = summarizeByDomainTopic(attempts);
+
+  assert.deepEqual(domains, [
+    {
+      id: "domain-1",
+      name: "Dominio 1 - General Security Concepts",
+      total: 2,
+      correct: 1,
+      wrong: 1,
+      rate: 50,
+    },
+    {
+      id: "domain-5",
+      name: "Domínio 5 - Security Program Management and Oversight",
+      total: 2,
+      correct: 1,
+      wrong: 1,
+      rate: 50,
+    },
   ]);
 
-  assert.deepEqual(result, [
+  assert.deepEqual(topics, [
+    { id: "Criptografia", name: "Criptografia", total: 2, correct: 1, wrong: 1, rate: 50 },
+    { id: "Privacidade", name: "Privacidade", total: 2, correct: 1, wrong: 1, rate: 50 },
+  ]);
+
+  assert.deepEqual(nested, [
     {
-      domain: "Dominio 1",
+      id: "domain-1",
+      domain: "Dominio 1 - General Security Concepts",
       total: 2,
       correct: 1,
       wrong: 1,
       rate: 50,
-      subthemes: [{ subtheme: "CIA", total: 2, correct: 1, wrong: 1, rate: 50 }],
+      topics: [{ topic: "Criptografia", total: 2, correct: 1, wrong: 1, rate: 50 }],
     },
     {
-      domain: "Dominio 2",
+      id: "domain-5",
+      domain: "Domínio 5 - Security Program Management and Oversight",
       total: 2,
       correct: 1,
       wrong: 1,
       rate: 50,
-      subthemes: [
-        { subtheme: "Malware", total: 1, correct: 1, wrong: 0, rate: 100 },
-        { subtheme: "Sem subtema", total: 1, correct: 0, wrong: 1, rate: 0 },
-      ],
+      topics: [{ topic: "Privacidade", total: 2, correct: 1, wrong: 1, rate: 50 }],
     },
   ]);
+});
+
+test("topic and domain counters increase correct and wrong independently", () => {
+  const attempts = [
+    { correct: true, question: { subject: "Domínio 5 - Security Program Management and Oversight", theme: "Privacidade" } },
+    { correct: false, question: { subject: "Domínio 5 - Security Program Management and Oversight", theme: "Privacidade" } },
+  ];
+
+  assert.deepEqual(calculateStatsByDomain(attempts)[0], {
+    id: "domain-5",
+    name: "Domínio 5 - Security Program Management and Oversight",
+    total: 2,
+    correct: 1,
+    wrong: 1,
+    rate: 50,
+  });
+  assert.deepEqual(calculateStatsByTopic(attempts)[0], {
+    id: "Privacidade",
+    name: "Privacidade",
+    total: 2,
+    correct: 1,
+    wrong: 1,
+    rate: 50,
+  });
 });
 
 test("srs increases intervals and records lapses", () => {

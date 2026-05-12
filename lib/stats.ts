@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { summarizeAttempts, summarizeByDomainSubtheme } from "./stats-core";
+import { calculateStatsByDomain, calculateStatsByTopic, summarizeAttempts, summarizeByDomainTopic } from "./stats-core";
 
 export { summarizeAttempts };
 
@@ -184,7 +184,9 @@ export async function getDashboard(period: DashboardPeriod = "all", source: Dash
     selectedSource: source,
     period: {
       ...periodSummary,
-      domainSubthemes: summarizeByDomainSubtheme(periodAttempts),
+      domains: calculateStatsByDomain(periodAttempts),
+      topics: calculateStatsByTopic(periodAttempts),
+      domainTopics: summarizeByDomainTopic(periodAttempts),
     },
     resettable: {
       answered: answeredSinceReset,

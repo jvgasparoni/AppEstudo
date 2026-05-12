@@ -16,10 +16,11 @@ const sourceOptions: Array<{ value: DashboardSource; label: string }> = [
 ];
 
 function StatCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+  const valueClass = typeof value === "string" && value.length > 18 ? "text-base font-semibold leading-snug" : "text-2xl font-bold";
   return (
     <div className="card">
       <p className="text-sm text-slate-500">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className={valueClass}>{value}</p>
       {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     </div>
   );
@@ -29,11 +30,24 @@ function dashboardHref(period: DashboardPeriod, source: DashboardSource) {
   return `/dashboard?period=${period}&source=${source}`;
 }
 
+function topBy<T extends { name: string; correct: number; wrong: number; total: number }>(items: T[], key: "correct" | "wrong") {
+  return [...items].sort((a, b) => b[key] - a[key] || b.total - a.total || a.name.localeCompare(b.name))[0] || null;
+}
+
+function topLabel(item: { name: string; correct: number; wrong: number; total: number } | null, key: "correct" | "wrong") {
+  if (!item || item[key] === 0) return "-";
+  return `${item.name} (${item[key]})`;
+}
+
 export default async function Dashboard({ searchParams }: { searchParams: { period?: string; source?: string } }) {
   const selectedPeriod = normalizeDashboardPeriod(searchParams.period);
   const selectedSource = normalizeDashboardSource(searchParams.source);
   const d = await getDashboard(selectedPeriod, selectedSource);
   const pendingFlashcards = await prisma.flashcard.count({ where: { nextReview: { lte: new Date() } } });
+  const topCorrectTopic = topBy(d.period.topics, "correct");
+  const topWrongTopic = topBy(d.period.topics, "wrong");
+  const topCorrectDomain = topBy(d.period.domains, "correct");
+  const topWrongDomain = topBy(d.period.domains, "wrong");
 
   return (
     <div className="space-y-4">
@@ -76,7 +90,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { peri
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="font-semibold">Analise por periodo</p>
-            <p className="text-sm text-slate-600">Filtra as tentativas por data e origem, mostrando o desempenho por dominio e subtema.</p>
+            <p className="text-sm text-slate-600">Filtra as tentativas por data e origem, separando dominio pela materia e tema pelo campo Tema.</p>
           </div>
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
@@ -118,11 +132,18 @@ export default async function Dashboard({ searchParams }: { searchParams: { peri
           <StatCard label="Acerto no periodo" value={`${d.period.rate}%`} />
         </div>
 
-        {d.period.domainSubthemes.length === 0 ? (
+        <div className="grid gap-3 md:grid-cols-4">
+          <StatCard label="Tema com mais acertos" value={topLabel(topCorrectTopic, "correct")} />
+          <StatCard label="Tema com mais erros" value={topLabel(topWrongTopic, "wrong")} />
+          <StatCard label="Dominio com mais acertos" value={topLabel(topCorrectDomain, "correct")} />
+          <StatCard label="Dominio com mais erros" value={topLabel(topWrongDomain, "wrong")} />
+        </div>
+
+        {d.period.domainTopics.length === 0 ? (
           <div className="rounded border p-3 text-sm text-slate-600">Nenhuma tentativa encontrada neste periodo.</div>
         ) : (
           <div className="space-y-3">
-            {d.period.domainSubthemes.map((domain) => (
+            {d.period.domainTopics.map((domain) => (
               <div key={domain.domain} className="rounded border">
                 <div className="grid gap-2 border-b bg-slate-50 p-3 md:grid-cols-[1fr_repeat(4,90px)]">
                   <p className="font-semibold">{domain.domain}</p>
@@ -132,13 +153,13 @@ export default async function Dashboard({ searchParams }: { searchParams: { peri
                   <p>{domain.rate}%</p>
                 </div>
                 <div className="divide-y">
-                  {domain.subthemes.map((subtheme) => (
-                    <div key={subtheme.subtheme} className="grid gap-2 p-3 text-sm md:grid-cols-[1fr_repeat(4,90px)]">
-                      <p>{subtheme.subtheme}</p>
-                      <p>{subtheme.total}</p>
-                      <p>{subtheme.correct}</p>
-                      <p>{subtheme.wrong}</p>
-                      <p>{subtheme.rate}%</p>
+                  {domain.topics.map((topic) => (
+                    <div key={topic.topic} className="grid gap-2 p-3 text-sm md:grid-cols-[1fr_repeat(4,90px)]">
+                      <p>Tema: {topic.topic}</p>
+                      <p>{topic.total}</p>
+                      <p>{topic.correct}</p>
+                      <p>{topic.wrong}</p>
+                      <p>{topic.rate}%</p>
                     </div>
                   ))}
                 </div>

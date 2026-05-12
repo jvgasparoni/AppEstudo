@@ -7,9 +7,9 @@ test("calculate exam stats by domain", () => {
   const stats = getExamStats({
     examQuestions: [{}, {}, {}],
     attempts: [
-      { correct: true, createdAt: new Date("2026-05-07T11:00:00.000Z"), question: { theme: "D1" } },
-      { correct: false, createdAt: completedAt, question: { theme: "Dominio 1" } },
-      { correct: true, createdAt: new Date("2026-05-07T10:00:00.000Z"), question: { theme: "D2" } },
+      { correct: true, createdAt: new Date("2026-05-07T11:00:00.000Z"), question: { subject: "D1", theme: "Privacidade" } },
+      { correct: false, createdAt: completedAt, question: { subject: "Dominio 1", theme: "Criptografia" } },
+      { correct: true, createdAt: new Date("2026-05-07T10:00:00.000Z"), question: { subject: "D2", theme: "Privacidade" } },
     ],
   });
 
@@ -19,8 +19,8 @@ test("calculate exam stats by domain", () => {
   assert.equal(stats.percentage, 67);
   assert.equal(stats.completedAt, completedAt);
   assert.deepEqual(stats.byDomain, [
-    { domain: "Dominio 1", total: 2, correct: 1, wrong: 1, percentage: 50 },
-    { domain: "Dominio 2", total: 1, correct: 1, wrong: 0, percentage: 100 },
+    { domain: "Dominio 1 - General Security Concepts", total: 2, correct: 1, wrong: 1, percentage: 50 },
+    { domain: "Dominio 2 - Threats, Vulnerabilities, and Mitigations", total: 1, correct: 1, wrong: 0, percentage: 100 },
   ]);
 });
 

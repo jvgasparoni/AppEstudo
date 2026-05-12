@@ -1,15 +1,19 @@
 import { buildCustomDomainPlan, buildExamBlueprintPlan } from "@/lib/exam-planner";
+import { CLAVIS_ORIGIN } from "@/lib/clavis";
 import { prisma } from "@/lib/prisma";
 
 type CreateExamBody =
   | { mode: "examBlueprint"; amount: number }
-  | { mode: "custom"; domains: Array<{ theme: string; amount: number }> };
+  | { mode: "custom"; domains: Array<{ domain?: string; domainId?: string; theme?: string; amount: number }> };
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as CreateExamBody | null;
   if (!body) return Response.json({ message: "Dados invalidos" }, { status: 400 });
 
-  const questions = await prisma.question.findMany({ select: { id: true, theme: true, tags: true } });
+  const questions = await prisma.question.findMany({
+    where: { origin: { not: CLAVIS_ORIGIN } },
+    select: { id: true, subject: true },
+  });
   const plan =
     body.mode === "examBlueprint"
       ? buildExamBlueprintPlan(questions, body.amount)

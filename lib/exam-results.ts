@@ -5,8 +5,8 @@ type ExamForStats = {
     correct: boolean;
     createdAt: Date;
     question: {
+      subject: string;
       theme: string;
-      tags?: string | null;
     };
   }>;
   examQuestions: Array<unknown>;

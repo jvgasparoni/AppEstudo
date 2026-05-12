@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { getExamBlueprintCounts } from "@/lib/domains";
 
 type Domain = {
+  id: string;
   name: string;
   count: number;
 };
@@ -44,7 +45,7 @@ export default function ExamManager({ domains, totalQuestions }: { domains: Doma
 
   function createCustom() {
     const domainsPayload = Object.entries(domainAmounts)
-      .map(([theme, amount]) => ({ theme, amount: Number(amount) || 0 }))
+      .map(([domainId, amount]) => ({ domainId, amount: Number(amount) || 0 }))
       .filter((item) => item.amount > 0);
 
     createExam({ mode: "custom", domains: domainsPayload }, "custom");
@@ -103,8 +104,8 @@ export default function ExamManager({ domains, totalQuestions }: { domains: Doma
                   min={0}
                   max={domain.count}
                   type="number"
-                  value={domainAmounts[domain.name] ?? 0}
-                  onChange={(event) => setDomainAmounts((current) => ({ ...current, [domain.name]: Number(event.target.value) }))}
+                  value={domainAmounts[domain.id] ?? 0}
+                  onChange={(event) => setDomainAmounts((current) => ({ ...current, [domain.id]: Number(event.target.value) }))}
                 />
               </label>
             ))}

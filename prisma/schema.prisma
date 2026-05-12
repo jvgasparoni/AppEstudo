@@ -23,11 +23,15 @@ model Question {
   difficulty    String   @default("MEDIUM")
   tags          String
   source        String?
+  origin        String   @default("GENERAL")
+  lessonNumber  Int?
   reviewed      Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   attempts      QuestionAttempt[]
   examQuestions ExamQuestion[]
+
+  @@index([origin, lessonNumber])
 }
 
 model QuestionAttempt {
